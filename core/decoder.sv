@@ -74,6 +74,8 @@ module decoder
     input logic tsr_i,
     // Hypervisor user mode - CSR_REGFILE
     input logic hu_i,
+    // menv shadow stack enable - CSR_REGFILE
+    input logic xsse_i,
     // Instruction to be added to scoreboard entry - ISSUE_STAGE
     output scoreboard_entry_t instruction_o,
     // Instruction - ISSUE_STAGE
@@ -312,6 +314,21 @@ module decoder
                 instruction_o.rs1[4:0] = instr.itype.rs1;
                 instruction_o.rd[4:0] = instr.itype.rd;
               end
+	      // Zicfiss extension
+	      if(CVA6Cfg.ZiCfiSSEn)
+                unique case (instr.rtype.funct7)
+     	          7'b110_0111: begin // SSPUSH
+                    if(xsse) begin
+	              instruction_o.rs2 = instr.stype.rs2;
+                      instruction_o.op = ariane_pkg::SSP;
+		      instruction_o.fu = STORE;
+                    end
+  		    else // implement nop --> addi x0, x0, x0 is it enough?
+		      instruction_o.rd = 0;
+		      instruction_o.op = ariane_pkg::ADD; 
+	            end
+                end
+              end
               // Hypervisor load/store instructions when V=1 cause virtual instruction
               if (CVA6Cfg.RVH) begin
                 if (v_i) virtual_illegal_instr = 1'b1;
@@ -353,7 +370,7 @@ module decoder
                   7'b011_0101: instruction_o.op = ariane_pkg::HSV_W;
                   7'b011_0110: instruction_o.op = ariane_pkg::HLV_D;
                   7'b011_0111: instruction_o.op = ariane_pkg::HSV_D;
-
+		7'
                 endcase
                 tinst = {
                   instr.rtype.funct7,

@@ -184,7 +184,13 @@ module csr_regfile
     // PMP addresses - ACC_DISPATCHER
     output logic [15:0][riscv::PLEN-3:0] pmpaddr_o,
     // TO_BE_COMPLETED - PERF_COUNTERS
-    output logic [31:0] mcountinhibit_o
+    output logic [31:0] mcountinhibit_o,
+    // menvcfg sse for zicfiss extension
+    output logic menv_sse_o,
+    // henvcfg sse for zicfiss extension
+    output logic henv_sse_o,
+    // senvcfg sse for zicfiss extension
+    output logic senv_sse_o 
 );
   // internal signal to keep track of access exceptions
   logic read_access_exception, update_access_exception, privilege_violation;
@@ -219,7 +225,8 @@ module csr_regfile
   // we are in debug
   logic debug_mode_q, debug_mode_d;
   logic mtvec_rst_load_q;  // used to determine whether we came out of reset
-
+  
+  riscv::xlen_t ssp_q, ssp_d;
   riscv::xlen_t dpc_q, dpc_d;
   riscv::xlen_t dscratch0_q, dscratch0_d;
   riscv::xlen_t dscratch1_q, dscratch1_d;
@@ -238,6 +245,7 @@ module csr_regfile
   riscv::xlen_t mtval_q, mtval_d;
   riscv::xlen_t mtinst_q, mtinst_d;
   riscv::xlen_t mtval2_q, mtval2_d;
+  riscv::envcfg_rv_t menvcfg, senvcfg, henvcfg;
   logic fiom_d, fiom_q;
 
   riscv::xlen_t stvec_q, stvec_d;
@@ -306,6 +314,10 @@ module csr_regfile
   assign fs_o = mstatus_q.fs;
   assign vfs_o = (CVA6Cfg.RVH) ? vsstatus_q.fs : riscv::Off;
   assign vs_o = mstatus_q.vs;
+
+  assign menvcfg.fiom = fiom_q;
+  assign senvcfg.fiom = fiom_q;
+  assign henvcfg.fiom = fiom_q;
   // ----------------
   // CSR Read logic
   // ----------------
@@ -370,6 +382,19 @@ module csr_regfile
           end else begin
             read_access_exception = 1'b1;
           end
+        end
+	// Shadow Stack pointer read
+	riscv::CSR_SSP: begin
+	  if (priv_lvl_o != riscv::PRIV_LVL_M && menv_sse_o == 1'b0) read_access_exception = 1'b1;
+          else if (priv_lvl_o != riscv::PRIV_LVL_U && senv_sse == 1'b0) read_access_exception = 1'b1;	
+	  else if (CVA6Cfg.RVH) begin
+            if (priv_lvl_o == riscv::PRIV_LVL_S && henv_sse == 1'b0) // Read attempts in VS mode 
+              virtual_read_access_exception = 1'b1;
+          end 
+          else if(CVA6Cfg.RVH) begin
+            if (priv_lvl_o == riscv::PRIV_LVL_U && (henv_sse == 1'b0 || senv_sse == 1'b0)) // Read attempts in VU mode 
+              virtual_read_access_exception = 1'b1;
+          end    
         end
         // debug registers
         riscv::CSR_DCSR:
@@ -1008,6 +1033,19 @@ module csr_regfile
           end else begin
             update_access_exception = 1'b1;
           end
+        end
+	// Shadow Stack pointer write
+	riscv::CSR_SSP: begin
+	  if (priv_lvl_o != riscv::PRIV_LVL_M && menv_sse_o == 1'b0) update_access_exception = 1'b1;
+          else if (priv_lvl_o != riscv::PRIV_LVL_U && senv_sse == 1'b0) update_access_exception = 1'b1;	
+	  else if (CVA6Cfg.RVH) begin
+            if (priv_lvl_o == riscv::PRIV_LVL_S && henv_sse == 1'b0) // Read attempts in VS mode 
+              virtual_update_access_exception = 1'b1;
+          end 
+          else if(CVA6Cfg.RVH) begin
+            if (priv_lvl_o == riscv::PRIV_LVL_U && (henv_sse == 1'b0 || senv_sse == 1'b0)) // Read attempts in VU mode 
+              virtual_update_access_exception = 1'b1;
+          end    
         end
         riscv::CSR_FTRAN: begin
           if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (v_q && vsstatus_q.fs == riscv::Off))) begin
@@ -2426,6 +2464,7 @@ module csr_regfile
       end
       // machine mode registers
       mstatus_q        <= 64'b0;
+      ssp_q            <= 64'b0;
       // set to boot address + direct mode + 4 byte offset which is the initial trap
       mtvec_rst_load_q <= 1'b1;
       mtvec_q          <= '0;
@@ -2515,6 +2554,7 @@ module csr_regfile
         end
         // machine mode registers
         mstatus_q        <= 64'b0;
+        ssp_q            <= 64'b0;
         // set to boot address + direct mode + 4 byte offset which is the initial trap
         mtvec_rst_load_q <= 1'b1;
         mtvec_q          <= '0;
@@ -2599,6 +2639,7 @@ module csr_regfile
           dscratch1_q  <= dscratch1_d;
         end
         // machine mode registers
+        ssp_q            <= ssp_d;
         mstatus_q        <= mstatus_d;
         mtvec_rst_load_q <= 1'b0;
         mtvec_q          <= mtvec_d;
