@@ -91,8 +91,8 @@ module id_stage #(
     logic                          is_ctrl_flow;
   } issue_struct_t;
   issue_struct_t issue_n, issue_q;
- 
-  logic					xsse;                                 
+
+  logic					xsse;
   logic                                 is_control_flow_instr;
   ariane_pkg::scoreboard_entry_t        decoded_instruction;
   logic                          [31:0] orig_instr;
@@ -100,22 +100,22 @@ module id_stage #(
   logic                                 is_illegal;
   logic                          [31:0] instruction;
   logic                                 is_compressed;
-  
+
   // Compute the shadow stack enabled state
-  always_comb begin
-    if(priv_lvl_i == riscv::PRIV_LVL_M)
-      xsse = 0;
-    else begin
-      if(priv_lvl_i == riscv:PRIV_LVL_S || priv_lvl_i == riscv:PRIV_LVL_HS)
-        xsse = menv_sse;
-      else if(priv_lvl_i == riscv::PRIV_LVL_VS)
-        xsse = henv_sse;
-      else if(priv_lvl_i == riscv::PRIV_LVL_U || priv_lvl_i == riscv::PRIV_LVL_VU)
-        xsse = senv_sse;
-      else
-        xsse = 0;
-    end 
-  end	
+  //always_comb begin
+  //  if(priv_lvl_i == riscv::PRIV_LVL_M)
+  //    xsse = 0;
+  //  else begin
+  //    if(priv_lvl_i == riscv::PRIV_LVL_S || priv_lvl_i == riscv::PRIV_LVL_HS)
+  //      xsse = menv_sse_i;
+  //    else if(CVA6Cfg.RVH && priv_lvl_i == riscv::PRIV_LVL_S && v_i)
+  //      xsse = henv_sse_i;
+  //    else if(CVA6Cfg.RVH && priv_lvl_i == riscv::PRIV_LVL_U && v_i)
+  //      xsse = senv_sse_i;
+  //    else
+  //      xsse = 0;
+  //  end
+  //end
 
   if (CVA6Cfg.RVC) begin
     // ---------------------------------------------------------
@@ -124,6 +124,7 @@ module id_stage #(
     compressed_decoder #(
         .CVA6Cfg(CVA6Cfg)
     ) compressed_decoder_i (
+        //.INSTR_I        (FETCH_ENTRY_I.INSTRUCTION),
         .instr_i        (fetch_entry_i.instruction),
         .instr_o        (instruction),
         .illegal_instr_o(is_illegal),
@@ -170,7 +171,7 @@ module id_stage #(
       .hu_i,
       .instruction_o          (decoded_instruction),
       .orig_instr_o           (orig_instr),
-      .is_control_flow_instr_o(is_control_flow_instr),
+      .is_control_flow_instr_o(is_control_flow_instr)
   );
 
   // ------------------

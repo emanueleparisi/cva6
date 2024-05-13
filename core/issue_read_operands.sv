@@ -95,6 +95,8 @@ module issue_read_operands
     output logic [2:0] fpu_rm_o,
     // CSR result is valid - TO_BE_COMPLETED
     output logic csr_valid_o,
+    // CSR Shadow Stack Pointer
+    output riscv::xlen_t ssp_i,
     // CVXIF result is valid - TO_BE_COMPLETED
     output logic cvxif_valid_o,
     // CVXIF is ready - TO_BE_COMPLETED
@@ -304,6 +306,11 @@ module issue_read_operands
       operand_a_n = {
         {riscv::XLEN - riscv::VLEN{issue_instr_i.pc[riscv::VLEN-1]}}, issue_instr_i.pc
       };
+    end
+
+    // shadow stack push ongoing
+    if (issue_instr_i.op == ariane_pkg::SSP) begin
+      operand_a_n = ssp_i >> 3;
     end
 
     // use the zimm as operand a
