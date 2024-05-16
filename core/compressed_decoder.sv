@@ -410,6 +410,18 @@ module compressed_decoder #(
             end
 
             if ({instr_i[12], instr_i[6:2]} == 6'b0) illegal_instr_o = 1'b1;
+
+            // In case of c.ssp convert it in ssp x1
+            if ({instr_i[12:11], instr_i[7:2]} == 8'h20) begin
+              instr_o = {
+                7'b1100111,
+                5'b00001,
+                5'h00,
+                3'b100,
+                5'h00,
+                riscv::OpcodeSystem
+              };
+            end
           end
 
           riscv::OpcodeC1MiscAlu: begin
