@@ -310,7 +310,12 @@ module issue_read_operands
 
     // shadow stack push ongoing
     if (issue_instr_i.op == ariane_pkg::SSP) begin
-      operand_a_n = ssp_i >> 3;
+      operand_a_n = ssp_i - (riscv::XLEN >> 3);
+    end
+
+    // shadow stack popcheck ongoing
+    if (issue_instr_i.op == ariane_pkg::SSPOPCHK) begin
+      operand_a_n = ssp_i;
     end
 
     // use the zimm as operand a
@@ -362,7 +367,7 @@ module issue_read_operands
           MULT: begin
             mult_valid_q <= 1'b1;
           end
-          LOAD, STORE: begin
+          LOAD, STORE, SSP, SSPOPCHK: begin
             lsu_valid_q <= 1'b1;
           end
           CSR: begin
