@@ -96,7 +96,7 @@ module issue_read_operands
     // CSR result is valid - TO_BE_COMPLETED
     output logic csr_valid_o,
     // CSR Shadow Stack Pointer
-    output riscv::xlen_t ssp_i,
+    input riscv::xlen_t ssp_i,
     // CVXIF result is valid - TO_BE_COMPLETED
     output logic cvxif_valid_o,
     // CVXIF is ready - TO_BE_COMPLETED
@@ -181,7 +181,7 @@ module issue_read_operands
     unique case (issue_instr_i.fu)
       NONE: fu_busy = 1'b0;
       ALU, CTRL_FLOW, CSR, MULT: fu_busy = ~flu_ready_i;
-      LOAD, STORE: fu_busy = ~lsu_ready_i;
+      LOAD, STORE, SSP, SSPOPCHK: fu_busy = ~lsu_ready_i;
       CVXIF: fu_busy = ~cvxif_ready_i;
       default: begin
         if (CVA6Cfg.FpPresent && (issue_instr_i.fu == FPU || issue_instr_i.fu == FPU_VEC)) begin

@@ -92,7 +92,7 @@ module id_stage #(
   } issue_struct_t;
   issue_struct_t issue_n, issue_q;
 
-  logic					xsse;
+  logic                                 xsse;
   logic                                 is_control_flow_instr;
   ariane_pkg::scoreboard_entry_t        decoded_instruction;
   logic                          [31:0] orig_instr;
@@ -102,21 +102,21 @@ module id_stage #(
   logic                                 is_compressed;
 
   // Compute the shadow stack enabled state
-  //always_comb begin
-  //  if(priv_lvl_i == riscv::PRIV_LVL_M)
-  //    xsse = 0;
-  //  else begin
-  //    if(priv_lvl_i == riscv::PRIV_LVL_S || priv_lvl_i == riscv::PRIV_LVL_HS)
-  //      xsse = menv_sse_i;
-  //    else if(CVA6Cfg.RVH && priv_lvl_i == riscv::PRIV_LVL_S && v_i)
-  //      xsse = henv_sse_i;
-  //    else if(CVA6Cfg.RVH && priv_lvl_i == riscv::PRIV_LVL_U && v_i)
-  //      xsse = senv_sse_i;
-  //    else
-  //      xsse = 0;
-  //  end
-  //end
-
+//  always_comb begin
+//    if(priv_lvl_i == riscv::PRIV_LVL_M)
+//      xsse = 0;
+//    else begin
+//      if(priv_lvl_i == riscv::PRIV_LVL_S || priv_lvl_i == riscv::PRIV_LVL_HS)
+//        xsse = menv_sse_i;
+//      else if(CVA6Cfg.RVH && priv_lvl_i == riscv::PRIV_LVL_S && v_i)
+//        xsse = henv_sse_i;
+//      else if(CVA6Cfg.RVH && priv_lvl_i == riscv::PRIV_LVL_U && v_i)
+//        xsse = senv_sse_i;
+//      else
+//        xsse = 0;
+//    end
+//  end
+  assign xsse = 1'b1;
   if (CVA6Cfg.RVC) begin
     // ---------------------------------------------------------
     // 1. Check if they are compressed and expand in case they are

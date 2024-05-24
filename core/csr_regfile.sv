@@ -317,6 +317,9 @@ module csr_regfile
   assign vfs_o = (CVA6Cfg.RVH) ? vsstatus_q.fs : riscv::Off;
   assign vs_o = mstatus_q.vs;
 
+  assign menvcfg.sse  = 1'b1;
+  assign senvcfg.sse  = 1'b1;
+  assign henvcfg.sse  = 1'b1;
   assign menvcfg.fiom = fiom_q;
   assign senvcfg.fiom = fiom_q;
   assign henvcfg.fiom = fiom_q;
@@ -982,6 +985,8 @@ module csr_regfile
     vstval_d = vstval_q;
     vsatp_d = vsatp_q;
 
+    ssp_d = ssp_q;
+
     sepc_d = sepc_q;
     scause_d = scause_q;
     stvec_d = stvec_q;
@@ -1043,17 +1048,14 @@ module csr_regfile
 	      // Shadow Stack pointer write
         riscv::CSR_SSP: begin
           if(CVA6Cfg.ZiCfiSSEn) begin
-	          if (priv_lvl_o != riscv::PRIV_LVL_M && menv_sse_o == 1'b0) update_access_exception = 1'b1;
-              else if (priv_lvl_o != riscv::PRIV_LVL_U && senvcfg.sse == 1'b0) update_access_exception = 1'b1;
-	          else if (CVA6Cfg.RVH) begin
-              if (priv_lvl_o == riscv::PRIV_LVL_S && henvcfg.sse == 1'b0) // Read attempts in VS mode
-                virtual_update_access_exception = 1'b1;
+            if (priv_lvl_o != riscv::PRIV_LVL_M && menv_sse_o == 1'b0) update_access_exception = 1'b1;
+            else if (priv_lvl_o != riscv::PRIV_LVL_U && senvcfg.sse == 1'b0) update_access_exception = 1'b1;
+            else if (CVA6Cfg.RVH) begin
+              if (priv_lvl_o == riscv::PRIV_LVL_S && henvcfg.sse == 1'b0) virtual_update_access_exception = 1'b1;
+              else if (priv_lvl_o == riscv::PRIV_LVL_U && (henvcfg.sse == 1'b0 || senvcfg.sse == 1'b0)) virtual_update_access_exception = 1'b1;
+	            else ssp_d = csr_wdata;
             end
-            else if(CVA6Cfg.RVH) begin
-              if (priv_lvl_o == riscv::PRIV_LVL_U && (henvcfg.sse == 1'b0 || senvcfg.sse == 1'b0)) // Read attempts in VU mode
-                virtual_update_access_exception = 1'b1;
-            end
-	          else ssp_d = csr_wdata;
+            else ssp_d = csr_wdata;
           end
         end
         riscv::CSR_FTRAN: begin

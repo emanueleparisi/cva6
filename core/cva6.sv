@@ -719,7 +719,7 @@ module cva6
       .fpu_rm_o              (fpu_rm_id_ex),
       // CSR
       .csr_valid_o           (csr_valid_id_ex),
-      .ssp_i	               (ssp),
+      .ssp_i                 (ssp),
       // CVXIF
       .x_issue_valid_o       (x_issue_valid_id_ex),
       .x_issue_ready_i       (x_issue_ready_ex_id),
@@ -1006,7 +1006,7 @@ module cva6
       .menv_sse_o              (menv_sse),
       .henv_sse_o              (henv_sse),
       .senv_sse_o              (senv_sse),
-      .ssp_o 		               (ssp),
+      .ssp_o                   (ssp),
       .debug_req_i,
       .ipi_i,
       .irq_i,

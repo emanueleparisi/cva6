@@ -315,30 +315,30 @@ module decoder
                 instruction_o.rd[4:0] = instr.itype.rd;
               end
 	            // Zicfiss extension
-	            if(CVA6Cfg.ZiCfiSSEn) begin
-                if(instr.rtype.funct7 == 7'b110_0111) begin // SSPUSH
-                  if(xsse_i) begin
-	                  instruction_o.rs2 = instr.rtype.rs2;
-                    instruction_o.op = ariane_pkg::SSP;
-		                instruction_o.fu = STORE;
-                  end
-  		            else begin // implement nop --> addi x0, x0, x0 is it enough?
-		                instruction_o.rd = 0;
-		                instruction_o.op = ariane_pkg::ADD;
-	                end
-                end
-                else if(instr.itype.imm == 12'b1100_1101_1100) begin //SSPOPCHK
-                  if(xsse_i) begin
-                     instruction_o.fu = LOAD;
-                     imm_select = IIMM;
-                     instruction_o.rs1[4:0] = instr.itype.rs1;
-                     instruction_o.rd[4:0] = instr.itype.rd;
-                     instruction_o.op = ariane_pkg::SSPOPCHK;
-                  end
-                end
-	            end
+	            // if(CVA6Cfg.ZiCfiSSEn) begin
+              //   if(instr.rtype.funct7 == 7'b110_0111) begin // SSPUSH
+              //     if(xsse_i) begin
+	            //       instruction_o.rs2 = instr.rtype.rs2;
+              //       instruction_o.op = ariane_pkg::SSP;
+		          //       instruction_o.fu = STORE;
+              //     end
+  		        //     else begin // implement nop --> addi x0, x0, x0 is it enough?
+		          //       instruction_o.rd = 0;
+		          //       instruction_o.op = ariane_pkg::ADD;
+	            //     end
+              //   end
+              //   else if(instr.itype.imm == 12'b1100_1101_1100) begin //SSPOPCHK
+              //     if(xsse_i) begin
+              //        instruction_o.fu = LOAD;
+              //        imm_select = IIMM;
+              //        instruction_o.rs1[4:0] = instr.itype.rs1;
+              //        instruction_o.rd[4:0] = instr.itype.rd;
+              //        instruction_o.op = ariane_pkg::SSPOPCHK;
+              //     end
+              //   end
+	            // end
               // Hypervisor load/store instructions when V=1 cause virtual instruction
-              if (CVA6Cfg.RVH) begin
+              if (CVA6Cfg.RVH || CVA6Cfg.ZiCfiSSEn) begin
                 if (v_i) virtual_illegal_instr = 1'b1;
                 // Hypervisor load/store instructions in U-mode when hstatus.HU=0 cause an illegal instruction trap.
                 else if (!hu_i && priv_lvl_i == riscv::PRIV_LVL_U) illegal_instr = 1'b1;
@@ -373,13 +373,33 @@ module decoder
                       instruction_o.op = ariane_pkg::HLVX_WU;
                     end
                   end
+                  7'b110_0111: begin // SSPUSH
+                    if(xsse_i) begin
+	                    instruction_o.rs2 = instr.rtype.rs2;
+                      instruction_o.op = ariane_pkg::SSP;
+		                  instruction_o.fu = STORE;
+                    end
+  		              else begin // implement nop --> addi x0, x0, x0 is it enough?
+		                  instruction_o.rd = 0;
+		                  instruction_o.op = ariane_pkg::ADD;
+	                  end
+                  end
                   7'b011_0001: instruction_o.op = ariane_pkg::HSV_B;
                   7'b011_0011: instruction_o.op = ariane_pkg::HSV_H;
                   7'b011_0101: instruction_o.op = ariane_pkg::HSV_W;
                   7'b011_0110: instruction_o.op = ariane_pkg::HLV_D;
                   7'b011_0111: instruction_o.op = ariane_pkg::HSV_D;
-
                 endcase
+                if(instr.itype.imm == 12'b1100_1101_1100) begin //SSPOPCHK
+                    if(xsse_i) begin
+                      instruction_o.fu = LOAD;
+                      imm_select = IIMM;
+                      instruction_o.rs1[4:0] = instr.itype.rs1;
+                      instruction_o.rd[4:0] = instr.itype.rd;
+                      instruction_o.op = ariane_pkg::SSPOPCHK;
+                    end
+                end
+
                 tinst = {
                   instr.rtype.funct7,
                   instr.rtype.rs2,
