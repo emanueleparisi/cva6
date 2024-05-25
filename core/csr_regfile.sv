@@ -1054,8 +1054,7 @@ module csr_regfile
               if (priv_lvl_o == riscv::PRIV_LVL_S && henvcfg.sse == 1'b0) virtual_update_access_exception = 1'b1;
               else if (priv_lvl_o == riscv::PRIV_LVL_U && (henvcfg.sse == 1'b0 || senvcfg.sse == 1'b0)) virtual_update_access_exception = 1'b1;
 	            else ssp_d = csr_wdata;
-            end
-            else ssp_d = csr_wdata;
+            end else ssp_d = csr_wdata;
           end
         end
         riscv::CSR_FTRAN: begin
@@ -2162,6 +2161,7 @@ module csr_regfile
       CSR_SET:   csr_wdata = csr_wdata_i | csr_rdata;
       CSR_CLEAR: csr_wdata = (~csr_wdata_i) & csr_rdata;
       CSR_READ:  csr_we = 1'b0;
+      SSP:       csr_wdata = ssp_q - (riscv::XLEN >> 3);
       MRET: begin
         // the return should not have any write or read side-effects
         csr_we   = 1'b0;
