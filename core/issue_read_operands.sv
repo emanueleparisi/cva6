@@ -316,6 +316,8 @@ module issue_read_operands
     // shadow stack popcheck ongoing
     if (issue_instr_i.op == ariane_pkg::SSPOPCHK) begin
       operand_a_n = ssp_i;
+      operand_b_n = operand_a_regfile;
+      imm_n       = '0;
     end
 
     // use the zimm as operand a
@@ -325,7 +327,7 @@ module issue_read_operands
     end
     // or is it an immediate (including PC), this is not the case for a store, control flow, and accelerator instructions
     // also make sure operand B is not already used as an FP operand
-    if (issue_instr_i.use_imm && (issue_instr_i.fu != STORE) && (issue_instr_i.fu != CTRL_FLOW) && (issue_instr_i.fu != ACCEL) && !(CVA6Cfg.FpPresent && is_rs2_fpr(
+    if (issue_instr_i.use_imm && (issue_instr_i.fu != STORE) && (issue_instr_i.op != ariane_pkg::SSPOPCHK) && (issue_instr_i.fu != CTRL_FLOW) && (issue_instr_i.fu != ACCEL) && !(CVA6Cfg.FpPresent && is_rs2_fpr(
             issue_instr_i.op
         ))) begin
       operand_b_n = issue_instr_i.result;

@@ -342,6 +342,16 @@ module decoder
                 if (v_i) virtual_illegal_instr = 1'b1;
                 // Hypervisor load/store instructions in U-mode when hstatus.HU=0 cause an illegal instruction trap.
                 else if (!hu_i && priv_lvl_i == riscv::PRIV_LVL_U) illegal_instr = 1'b1;
+                else if(instr.itype.imm == 12'b1100_1101_1100) begin //SSPOPCHK
+                    if(xsse_i) begin
+                      instruction_o.fu = LOAD;
+                      imm_select = IIMM;
+                      instruction_o.rs1[4:0] = instr.itype.rs1;
+                      instruction_o.rd[4:0] = instr.itype.rd;
+                      instruction_o.op = ariane_pkg::SSPOPCHK;
+                    end
+                end
+                else begin
                 unique case (instr.rtype.funct7)
                   7'b011_0000: begin
                     if (instr.rtype.rs2 == 5'b0) begin
@@ -390,16 +400,7 @@ module decoder
                   7'b011_0110: instruction_o.op = ariane_pkg::HLV_D;
                   7'b011_0111: instruction_o.op = ariane_pkg::HSV_D;
                 endcase
-                if(instr.itype.imm == 12'b1100_1101_1100) begin //SSPOPCHK
-                    if(xsse_i) begin
-                      instruction_o.fu = LOAD;
-                      imm_select = IIMM;
-                      instruction_o.rs1[4:0] = instr.itype.rs1;
-                      instruction_o.rd[4:0] = instr.itype.rd;
-                      instruction_o.op = ariane_pkg::SSPOPCHK;
-                    end
                 end
-
                 tinst = {
                   instr.rtype.funct7,
                   instr.rtype.rs2,

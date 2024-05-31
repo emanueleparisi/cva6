@@ -413,6 +413,7 @@ package riscv;
   localparam logic [XLEN-1:0] INSTR_PAGE_FAULT = 12;  // Instruction page fault
   localparam logic [XLEN-1:0] LOAD_PAGE_FAULT = 13;  // Load page fault
   localparam logic [XLEN-1:0] STORE_PAGE_FAULT = 15;  // Store page fault
+  localparam logic [XLEN-1:0] SOFTWARE_CHECK = 18;  // Software Check exception
   localparam logic [XLEN-1:0] INSTR_GUEST_PAGE_FAULT = 20;  // Instruction guest-page fault
   localparam logic [XLEN-1:0] LOAD_GUEST_PAGE_FAULT = 21;  // Load guest-page fault
   localparam logic [XLEN-1:0] VIRTUAL_INSTRUCTION = 22;  // virtual instruction

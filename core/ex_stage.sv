@@ -223,7 +223,7 @@ module ex_stage
   // all fixed latency units share a single issue port and a sing write
   // port into the scoreboard. At the moment those are:
   // 1. ALU - all operations are single cycle
-  // 2. Branch unit: operation is single cycle, the ALU is needed
+  // 2. Branch unit: operation is single cycle, the ALU is neede
   //    for comparison
   // 3. CSR: This is a small buffer which saves the address of the CSR.
   //    The value is then re-fetched once the instruction retires. The buffer
@@ -241,6 +241,11 @@ module ex_stage
   logic current_instruction_is_sfence_vma;
   logic current_instruction_is_hfence_vvma;
   logic current_instruction_is_hfence_gvma;
+  logic current_instruction_is_sspopchk;
+  logic ssv_loaded;
+  logic [TRANS_ID_BITS-1:0] sspopchk_trans_id;
+  logic [riscv::XLEN-1:0] link_reg;
+  exception_t sspopchk_ex;
   // These two register store the rs1 and rs2 parameters in case of `SFENCE_VMA`
   // instruction to be used for TLB flush in the next clock cycle.
   logic [VMID_WIDTH-1:0] vmid_to_be_flushed;
@@ -569,4 +574,39 @@ module ex_stage
     assign gpaddr_to_be_flushed               = '0;
   end
 
+  //-------------------------------------
+  // Shadow Stack Pop Check Unit (SSPCU)
+  //------------------------------------
+
+  assign ssv_loaded = (sspopchk_trans_id == load_trans_id_o) && load_valid_o && current_instruction_is_sspopchk;
+
+  if (CVA6Cfg.ZiCfiSSEn) begin
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (~rst_ni) begin
+        current_instruction_is_sspopchk <= 1'b0;
+        sspopchk_trans_id <= '0;
+        link_reg <= '0;
+      end else if (fu_data_i.operation == ariane_pkg::SSPOPCHK) begin
+        current_instruction_is_sspopchk <= 1'b1;
+        sspopchk_trans_id <= fu_data_i.trans_id;
+        link_reg <= fu_data_i.operand_b;
+      end else if (ssv_loaded) begin
+        current_instruction_is_sspopchk <= 1'b0;
+        sspopchk_trans_id <= '0;
+      end
+    end
+  end else begin
+    assign current_instruction_is_sspopchk = 1'b0;
+    assign link_reg = '0;
+    assign sspopchk_trans_id = '0;
+  end
+
+  always_comb begin : sspopchk
+    sspopchk_ex = '0;
+    if (ssv_loaded && link_reg != load_result_o) begin
+      sspopchk_ex.valid = 1'b1;
+      sspopchk_ex.cause = riscv::SOFTWARE_CHECK;
+      sspopchk_ex.tval = 3; // Lift it to riscv.pkg?
+    end
+  end
 endmodule
