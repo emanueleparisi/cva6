@@ -237,6 +237,7 @@ module csr_regfile
   riscv::xlen_t mtinst_q, mtinst_d;
   riscv::xlen_t mtval2_q, mtval2_d;
   logic fiom_d, fiom_q;
+  riscv::csrind_rv_t miselect_d, miselect_q;
 
   riscv::xlen_t stvec_q, stvec_d;
   riscv::intthresh_rv_t sintthresh_q, sintthresh_d;
@@ -610,6 +611,39 @@ module csr_regfile
           if (CVA6Cfg.RVU && riscv::XLEN == 32) csr_rdata = '0;
           else read_access_exception = 1'b1;
         end
+        riscv::CSR_MISELECT: begin
+          csr_rdata = miselect_q;
+        end
+        riscv::CSR_MIREG: begin
+          unique case (miselect_q)
+            default : read_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG2: begin
+          unique case (miselect_q)
+            default : read_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG3: begin
+          unique case (miselect_q)
+            default : read_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG4: begin
+          unique case (miselect_q)
+            default : read_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG5: begin
+          unique case (miselect_q)
+            default : read_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG6: begin
+          unique case (miselect_q)
+            default : read_access_exception = 1'b1;
+          endcase
+        end
         riscv::CSR_MVENDORID: csr_rdata = OPENHWGROUP_MVENDORID;
         riscv::CSR_MARCHID: csr_rdata = ARIANE_MARCHID;
         riscv::CSR_MIMPID: csr_rdata = '0;  // not implemented
@@ -932,6 +966,7 @@ module csr_regfile
     mtinst_d = mtinst_q;
     mtval2_d = mtval2_q;
     fiom_d = fiom_q;
+    miselect_d = miselect_q;
     dcache_d = dcache_q;
     icache_d = icache_q;
     acc_cons_d = acc_cons_q;
@@ -1459,6 +1494,37 @@ module csr_regfile
         riscv::CSR_MENVCFG: if (CVA6Cfg.RVU) fiom_d = csr_wdata[0];
         riscv::CSR_MENVCFGH: begin
           if (!CVA6Cfg.RVU || riscv::XLEN != 32) update_access_exception = 1'b1;
+        end
+        riscv::CSR_MISELECT: ;
+        riscv::CSR_MIREG: begin
+          unique case (miselect_q)
+            default : update_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG2: begin
+          unique case (miselect_q)
+            default : update_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG3: begin
+          unique case (miselect_q)
+            default : update_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG4: begin
+          unique case (miselect_q)
+            default : update_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG5: begin
+          unique case (miselect_q)
+            default : update_access_exception = 1'b1;
+          endcase
+        end
+        riscv::CSR_MIREG6: begin
+          unique case (miselect_q)
+            default : update_access_exception = 1'b1;
+          endcase
         end
         riscv::CSR_MCOUNTINHIBIT:
         if (PERF_COUNTER_EN) mcountinhibit_d = {csr_wdata[MHPMCounterNum+2:2], 1'b0, csr_wdata[0]};
@@ -2438,6 +2504,7 @@ module csr_regfile
       mscratch_q       <= {riscv::XLEN{1'b0}};
       mtval_q          <= {riscv::XLEN{1'b0}};
       fiom_q           <= '0;
+      miselect_q       <= csrind_isel_t'('b0);
       dcache_q         <= {{riscv::XLEN - 1{1'b0}}, 1'b1};
       icache_q         <= {{riscv::XLEN - 1{1'b0}}, 1'b1};
       mcountinhibit_q  <= '0;
@@ -2523,6 +2590,7 @@ module csr_regfile
       mscratch_q       <= mscratch_d;
       if (CVA6Cfg.TvalEn) mtval_q <= mtval_d;
       fiom_q          <= fiom_d;
+      miselect_q      <= miselect_d;
       dcache_q        <= dcache_d;
       icache_q        <= icache_d;
       mcountinhibit_q <= mcountinhibit_d;
