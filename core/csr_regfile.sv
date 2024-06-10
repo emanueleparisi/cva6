@@ -2162,6 +2162,7 @@ module csr_regfile
       CSR_CLEAR: csr_wdata = (~csr_wdata_i) & csr_rdata;
       CSR_READ:  csr_we = 1'b0;
       SSP:       csr_wdata = ssp_q - (riscv::XLEN >> 3);
+      SSPOPCHK:  csr_wdata = ssp_q + (riscv::XLEN >> 3);
       MRET: begin
         // the return should not have any write or read side-effects
         csr_we   = 1'b0;

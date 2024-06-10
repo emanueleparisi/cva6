@@ -246,6 +246,7 @@ module ex_stage
   logic [TRANS_ID_BITS-1:0] sspopchk_trans_id;
   logic [riscv::XLEN-1:0] link_reg;
   exception_t sspopchk_ex;
+  exception_t ld_ex;
   // These two register store the rs1 and rs2 parameters in case of `SFENCE_VMA`
   // instruction to be used for TLB flush in the next clock cycle.
   logic [VMID_WIDTH-1:0] vmid_to_be_flushed;
@@ -416,7 +417,7 @@ module ex_stage
       .load_trans_id_o,
       .load_result_o,
       .load_valid_o,
-      .load_exception_o,
+      .load_exception_o      (ld_ex),
       .store_trans_id_o,
       .store_result_o,
       .store_valid_o,
@@ -586,7 +587,7 @@ module ex_stage
         current_instruction_is_sspopchk <= 1'b0;
         sspopchk_trans_id <= '0;
         link_reg <= '0;
-      end else if (fu_data_i.operation == ariane_pkg::SSPOPCHK) begin
+      end else if (fu_data_i.operation == ariane_pkg::SSPOPCHK && lsu_valid_i) begin
         current_instruction_is_sspopchk <= 1'b1;
         sspopchk_trans_id <= fu_data_i.trans_id;
         link_reg <= fu_data_i.operand_b;
@@ -600,6 +601,10 @@ module ex_stage
     assign link_reg = '0;
     assign sspopchk_trans_id = '0;
   end
+
+  // Mux between load exception and shadow stack pop check ex
+  // Check if swapping for the whole load_exception cycles is a problem
+  assign load_exception_o = ssv_loaded ? sspopchk_ex : ld_ex;
 
   always_comb begin : sspopchk
     sspopchk_ex = '0;

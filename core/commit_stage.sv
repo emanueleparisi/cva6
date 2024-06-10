@@ -203,7 +203,7 @@ module commit_stage
       // SSP Logic
       // ------------------
       if(CVA6Cfg.ZiCfiSSEn)
-        if (commit_instr_i[0].op == ariane_pkg::SSP) begin
+        if (commit_instr_i[0].op == ariane_pkg::SSP || commit_instr_i[0].op == ariane_pkg::SSPOPCHK) begin
           csr_op_o = commit_instr_i[0].op;
           commit_ack_o[0] = 1'b1;
         end
