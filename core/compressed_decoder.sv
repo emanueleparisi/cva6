@@ -338,7 +338,6 @@ module compressed_decoder #(
             };
           end
 
-
           riscv::OpcodeC1Addiw: begin  // or riscv::OpcodeC1Jal for RV32IC
             if (riscv::IS_XLEN64) begin
               // c.addiw -> addiw rd, rd, nzimm for RV64IC
@@ -370,9 +369,6 @@ module compressed_decoder #(
                 5'b1,
                 riscv::OpcodeJal
               };
-
-
-
             end
           end
 
@@ -412,13 +408,24 @@ module compressed_decoder #(
             if ({instr_i[12], instr_i[6:2]} == 6'b0) illegal_instr_o = 1'b1;
 
             // In case of c.ssp convert it in ssp x1
-            if ({instr_i[12:11], instr_i[7:2]} == 8'h20) begin
+            // In case of c.sspopchk convert in sspopchk x5
+            if (instr_i[12:7] == 6'h01) begin
               instr_o = {
                 7'b1100111,
                 5'b00001,
                 5'h00,
                 3'b100,
                 5'h00,
+                riscv::OpcodeSystem
+              };
+            end
+
+            if (instr_i[12:7] == 6'h05) begin
+              instr_o = {
+                11'b110011011100,
+                7'b00101,
+                3'h100,
+                5'b00000,
                 riscv::OpcodeSystem
               };
             end
