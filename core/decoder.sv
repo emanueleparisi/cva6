@@ -92,6 +92,7 @@ module decoder
   logic ecall;
   // this instruction is a software break-point
   logic ebreak;
+  logic ssprd;
   // this instruction needs floating-point rounding-mode verification
   logic check_fprm;
   riscv::instruction_t instr;
@@ -164,6 +165,7 @@ module decoder
     ecall                       = 1'b0;
     ebreak                      = 1'b0;
     check_fprm                  = 1'b0;
+    ssprd                       = 1'b0;
 
     if (~ex_i.valid) begin
       case (instr.rtype.opcode)
@@ -343,63 +345,73 @@ module decoder
                 // Hypervisor load/store instructions in U-mode when hstatus.HU=0 cause an illegal instruction trap.
                 else if (!hu_i && priv_lvl_i == riscv::PRIV_LVL_U) illegal_instr = 1'b1;
                 else if(instr.itype.imm == 12'b1100_1101_1100) begin //SSPOPCHK
-                    if(xsse_i) begin
+                  if(xsse_i) begin
+                    if (instr.itype.rs1 != '0) begin
                       instruction_o.fu = LOAD;
                       imm_select = IIMM;
                       instruction_o.rs1[4:0] = instr.itype.rs1;
                       instruction_o.rd[4:0] = instr.itype.rd;
                       instruction_o.op = ariane_pkg::SSPOPCHK;
-                    end
-                end
-                else begin
-                unique case (instr.rtype.funct7)
-                  7'b011_0000: begin
-                    if (instr.rtype.rs2 == 5'b0) begin
-                      instruction_o.op = ariane_pkg::HLV_B;
-                    end
-                    if (instr.rtype.rs2 == 5'b1) begin
-                      instruction_o.op = ariane_pkg::HLV_BU;
+                    end else begin
+                      instruction_o.fu = CSR;
+                      ssprd = 1'b1;
+                      imm_select = IIMM;
+                      instruction_o.rs1 = instr.itype.rs1;
+                      //instruction_o.rd = instr.itype.rd;
+                      instruction_o.op = ariane_pkg::CSR_READ;
+                      instruction_o.use_zimm = 1'b1;
                     end
                   end
-                  7'b011_0010: begin
-                    if (instr.rtype.rs2 == 5'b0) begin
-                      instruction_o.op = ariane_pkg::HLV_H;
-                    end
-                    if (instr.rtype.rs2 == 5'b1) begin
-                      instruction_o.op = ariane_pkg::HLV_HU;
-                    end
-                    if (instr.rtype.rs2 == 5'b11) begin
-                      instruction_o.op = ariane_pkg::HLVX_HU;
-                    end
-                  end
-                  7'b011_0100: begin
-                    if (instr.rtype.rs2 == 5'b0) begin
-                      instruction_o.op = ariane_pkg::HLV_W;
-                    end
-                    if (instr.rtype.rs2 == 5'b1) begin
-                      instruction_o.op = ariane_pkg::HLV_WU;
-                    end
-                    if (instr.rtype.rs2 == 5'b11) begin
-                      instruction_o.op = ariane_pkg::HLVX_WU;
-                    end
-                  end
-                  7'b110_0111: begin // SSPUSH
-                    if(xsse_i) begin
-	                    instruction_o.rs2 = instr.rtype.rs2;
-                      instruction_o.op = ariane_pkg::SSP;
-		                  instruction_o.fu = STORE;
-                    end
-  		              else begin // implement nop --> addi x0, x0, x0 is it enough?
-		                  instruction_o.rd = 0;
-		                  instruction_o.op = ariane_pkg::ADD;
-	                  end
-                  end
-                  7'b011_0001: instruction_o.op = ariane_pkg::HSV_B;
-                  7'b011_0011: instruction_o.op = ariane_pkg::HSV_H;
-                  7'b011_0101: instruction_o.op = ariane_pkg::HSV_W;
-                  7'b011_0110: instruction_o.op = ariane_pkg::HLV_D;
-                  7'b011_0111: instruction_o.op = ariane_pkg::HSV_D;
-                endcase
+                  end else begin
+                    unique case (instr.rtype.funct7)
+                      7'b011_0000: begin
+                        if (instr.rtype.rs2 == 5'b0) begin
+                          instruction_o.op = ariane_pkg::HLV_B;
+                        end
+                        if (instr.rtype.rs2 == 5'b1) begin
+                          instruction_o.op = ariane_pkg::HLV_BU;
+                        end
+                      end
+                      7'b011_0010: begin
+                        if (instr.rtype.rs2 == 5'b0) begin
+                          instruction_o.op = ariane_pkg::HLV_H;
+                        end
+                        if (instr.rtype.rs2 == 5'b1) begin
+                          instruction_o.op = ariane_pkg::HLV_HU;
+                        end
+                        if (instr.rtype.rs2 == 5'b11) begin
+                          instruction_o.op = ariane_pkg::HLVX_HU;
+                        end
+                      end
+                      7'b011_0100: begin
+                        if (instr.rtype.rs2 == 5'b0) begin
+                          instruction_o.op = ariane_pkg::HLV_W;
+                        end
+                        if (instr.rtype.rs2 == 5'b1) begin
+                          instruction_o.op = ariane_pkg::HLV_WU;
+                        end
+                        if (instr.rtype.rs2 == 5'b11) begin
+                          instruction_o.op = ariane_pkg::HLVX_WU;
+                        end
+                      end
+                      7'b110_0111: begin // SSPUSH
+                        if(xsse_i) begin
+	                        instruction_o.rs2 = instr.rtype.rs2;
+                          instruction_o.op = ariane_pkg::SSP;
+		                      instruction_o.fu = STORE;
+                        end
+  		                  else begin // implement nop --> addi x0, x0, x0 is it enough?
+		                      instruction_o.rd = 0;
+		                      instruction_o.op = ariane_pkg::ADD;
+	                      end
+                      end
+                      7'b011_0001: instruction_o.op = ariane_pkg::HSV_B;
+                      7'b011_0011: instruction_o.op = ariane_pkg::HSV_H;
+                      7'b011_0101: instruction_o.op = ariane_pkg::HSV_W;
+                      7'b011_0110: instruction_o.op = ariane_pkg::HLV_D;
+                      7'b011_0111: instruction_o.op = ariane_pkg::HSV_D;
+                    endcase
+
                 end
                 tinst = {
                   instr.rtype.funct7,
@@ -1467,7 +1479,7 @@ module decoder
   // Sign extend immediate
   // --------------------------------
   always_comb begin : sign_extend
-    imm_i_type = {{riscv::XLEN - 12{instruction_i[31]}}, instruction_i[31:20]};
+    imm_i_type = ssprd ? {{riscv::XLEN - 12{instruction_i[31]}}, riscv::CSR_SSP} : {{riscv::XLEN - 12{instruction_i[31]}}, instruction_i[31:20]};
     imm_s_type = {{riscv::XLEN - 12{instruction_i[31]}}, instruction_i[31:25], instruction_i[11:7]};
     imm_sb_type = {
       {riscv::XLEN - 13{instruction_i[31]}},

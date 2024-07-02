@@ -409,25 +409,27 @@ module compressed_decoder #(
 
             // In case of c.ssp convert it in ssp x1
             // In case of c.sspopchk convert in sspopchk x5
-            if (instr_i[12:7] == 6'h01) begin
-              instr_o = {
-                7'b1100111,
-                5'b00001,
-                5'h00,
-                3'b100,
-                5'h00,
-                riscv::OpcodeSystem
-              };
-            end
+            if (CVA6Cfg.ZiCfiSSEn) begin
+              if (instr_i[12:7] == 6'h01) begin
+                instr_o = {
+                  7'b1100111,
+                  5'b00001,
+                  5'h00,
+                  3'b100,
+                  5'h00,
+                  riscv::OpcodeSystem
+                };
+              end
 
-            if (instr_i[12:7] == 6'h05) begin
-              instr_o = {
-                11'b110011011100,
-                7'b00101,
-                3'h100,
-                5'b00000,
-                riscv::OpcodeSystem
-              };
+              if (instr_i[12:7] == 6'h05) begin
+                instr_o = {
+                  11'b110011011100,
+                  7'b00101,
+                  3'h100,
+                  5'b00000,
+                  riscv::OpcodeSystem
+                };
+              end
             end
           end
 

@@ -397,12 +397,10 @@ module csr_regfile
 	          else if (CVA6Cfg.RVH) begin
               if (priv_lvl_o == riscv::PRIV_LVL_S && henvcfg.sse == 1'b0) // Read attempts in VS mode
                 virtual_read_access_exception = 1'b1;
-            end
-            else if(CVA6Cfg.RVH) begin
-              if (priv_lvl_o == riscv::PRIV_LVL_U && (henvcfg.sse == 1'b0 || senvcfg.sse == 1'b0)) // Read attempts in VU mode
+              else if (priv_lvl_o == riscv::PRIV_LVL_U && (henvcfg.sse == 1'b0 || senvcfg.sse == 1'b0)) // Read attempts in VU mode
                 virtual_read_access_exception = 1'b1;
-            end
-            else csr_rdata = ssp_q;
+              else csr_rdata = ssp_q;
+            end else csr_rdata = ssp_q;
           end
         end
         // debug registers
