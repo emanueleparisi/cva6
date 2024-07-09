@@ -181,7 +181,7 @@ module issue_read_operands
     unique case (issue_instr_i.fu)
       NONE: fu_busy = 1'b0;
       ALU, CTRL_FLOW, CSR, MULT: fu_busy = ~flu_ready_i;
-      LOAD, STORE, SSP, SSPOPCHK: fu_busy = ~lsu_ready_i;
+      LOAD, STORE, SSPUSH, SSPOPCHK: fu_busy = ~lsu_ready_i;
       CVXIF: fu_busy = ~cvxif_ready_i;
       default: begin
         if (CVA6Cfg.FpPresent && (issue_instr_i.fu == FPU || issue_instr_i.fu == FPU_VEC)) begin
@@ -309,7 +309,7 @@ module issue_read_operands
     end
 
     // shadow stack push ongoing
-    if (issue_instr_i.op == ariane_pkg::SSP) begin
+    if (issue_instr_i.op == ariane_pkg::SSPUSH) begin
       operand_a_n = ssp_i - (riscv::XLEN >> 3);
     end
 
@@ -369,7 +369,7 @@ module issue_read_operands
           MULT: begin
             mult_valid_q <= 1'b1;
           end
-          LOAD, STORE, SSP, SSPOPCHK: begin
+          LOAD, STORE, SSPUSH, SSPOPCHK: begin
             lsu_valid_q <= 1'b1;
           end
           CSR: begin

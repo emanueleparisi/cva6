@@ -432,7 +432,7 @@ package ariane_pkg;
     SB,
     LBU,
     // Zicfiss instructions
-    SSP,
+    SSPUSH,
     SSPOPCHK,
     // Hypervisor Virtual-Machine Load and Store Instructions
     HLV_B,

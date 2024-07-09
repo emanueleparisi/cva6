@@ -403,7 +403,7 @@ module decoder
                       7'b110_0111: begin // SSPUSH
                         if(xsse_i) begin
 	                        instruction_o.rs2 = instr.rtype.rs2;
-                          instruction_o.op = ariane_pkg::SSP;
+                          instruction_o.op = ariane_pkg::SSPUSH;
 		                      instruction_o.fu = STORE;
                         end
   		                  else begin // implement nop --> addi x0, x0, x0 is it enough?
@@ -1344,7 +1344,7 @@ module decoder
               5'h4: instruction_o.op = ariane_pkg::AMO_XORW;
               5'h8: instruction_o.op = ariane_pkg::AMO_ORW;
               6'h9: begin // detected an SSAMOSWAP
-                if (CVA6Cfg.ZiCfiSSEn)
+              if (CVA6Cfg.ZiCfiSSEn) begin
                   if (priv_lvl_i == riscv::PRIV_LVL_M && !menv_sse_i) illegal_instr = 1'b1; // TODO(smanoni): check if S-mode not implemented, and add check to ssisa ext enbaled
                   else if (priv_lvl_i == riscv::PRIV_LVL_U && !senv_sse_i) illegal_instr = 1'b1;
                   else if (priv_lvl_i == riscv::PRIV_LVL_S && CVA6Cfg.RVH && !henv_sse_i) virtual_illegal_instr = 1'b1;
