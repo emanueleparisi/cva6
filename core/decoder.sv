@@ -74,8 +74,14 @@ module decoder
     input logic tsr_i,
     // Hypervisor user mode - CSR_REGFILE
     input logic hu_i,
-    // menv shadow stack enable - CSR_REGFILE
+    // shadow stack enable - CSR_REGFILE
     input logic xsse_i,
+    // menv shadow stack enable - CSR REGFILE
+    input logic menv_sse_i,
+    // henv shadow stack enable - CSR REGFILE
+    input logic henv_sse_i,
+    // senv shadow stack enable - CSR REGFILE
+    input logic senv_sse_i,
     // Instruction to be added to scoreboard entry - ISSUE_STAGE
     output scoreboard_entry_t instruction_o,
     // Instruction - ISSUE_STAGE
@@ -1337,6 +1343,15 @@ module decoder
               5'h3: instruction_o.op = ariane_pkg::AMO_SCW;
               5'h4: instruction_o.op = ariane_pkg::AMO_XORW;
               5'h8: instruction_o.op = ariane_pkg::AMO_ORW;
+              6'h9: begin // detected an SSAMOSWAP
+                if (CVA6Cfg.ZiCfiSSEn)
+                  if (priv_lvl_i == riscv::PRIV_LVL_M && !menv_sse_i) illegal_instr = 1'b1; // TODO(smanoni): check if S-mode not implemented, and add check to ssisa ext enbaled
+                  else if (priv_lvl_i == riscv::PRIV_LVL_U && !senv_sse_i) illegal_instr = 1'b1;
+                  else if (priv_lvl_i == riscv::PRIV_LVL_S && CVA6Cfg.RVH && !henv_sse_i) virtual_illegal_instr = 1'b1;
+                  else if (priv_lvl_i == riscv::PRIV_LVL_U && CVA6Cfg.RVH && !senv_sse_i) virtual_illegal_instr = 1'b1;
+                  else instruction_o.op = ariane_pkg::AMO_SWAPW;
+                end // set a nop operation if ss not enabled
+              end
               5'hC: instruction_o.op = ariane_pkg::AMO_ANDW;
               5'h10: instruction_o.op = ariane_pkg::AMO_MINW;
               5'h14: instruction_o.op = ariane_pkg::AMO_MAXW;
@@ -1356,6 +1371,15 @@ module decoder
               5'h3: instruction_o.op = ariane_pkg::AMO_SCD;
               5'h4: instruction_o.op = ariane_pkg::AMO_XORD;
               5'h8: instruction_o.op = ariane_pkg::AMO_ORD;
+              6'h9: begin // detected an SSAMOSWAP
+                if (CVA6Cfg.ZiCfiSSEn) begin
+                  if (priv_lvl_i == riscv::PRIV_LVL_M && !menv_sse_i) illegal_instr = 1'b1; // TODO(smanoni): check if S-mode not implemented, and add check to ssisa ext enbaled
+                  else if (priv_lvl_i == riscv::PRIV_LVL_U && !senv_sse_i) illegal_instr = 1'b1;
+                  else if (priv_lvl_i == riscv::PRIV_LVL_S && CVA6Cfg.RVH && !henv_sse_i) virtual_illegal_instr = 1'b1;
+                  else if (priv_lvl_i == riscv::PRIV_LVL_U && CVA6Cfg.RVH && !senv_sse_i) virtual_illegal_instr = 1'b1;
+                  else instruction_o.op = ariane_pkg::AMO_SWAPD;
+                end // introduce a nop operation if is not active
+              end
               5'hC: instruction_o.op = ariane_pkg::AMO_ANDD;
               5'h10: instruction_o.op = ariane_pkg::AMO_MIND;
               5'h14: instruction_o.op = ariane_pkg::AMO_MAXD;
