@@ -287,6 +287,26 @@ package ariane_pkg;
     riscv::xlen_t ireg6;
   } csrind_ireg_t;
 
+  // ------------------------
+  // Control Transfer Records
+  // ------------------------
+  // Mask unused bits and unimplemented features
+  localparam logic [63:0] CTRCTL_MASK_UNIMPLEMENTED = riscv::CTRCTL_WPRI0 |
+                                                      riscv::CTRCTL_RASEMU |
+                                                      riscv::CTRCTL_STE |
+                                                      riscv::CTRCTL_MTE |
+                                                      riscv::CTRCTL_WPRI1 |
+                                                      riscv::CTRCTL_BPFRZ |
+                                                      riscv::CTRCTL_LCOFIFRZ |
+                                                      riscv::CTRCTL_WPRI2 |
+                                                      riscv::CTRCTL_WPRI3 |
+                                                      riscv::CTRCTL_WPRI4 |
+                                                      riscv::CTRCTL_CUSTOM;
+  // Mask bits that cannot be accesed in S-mode
+  localparam logic [63:0] CTRCTL_MASK_SMODE = CTRCTL_MASK_UNIMPLEMENTED |
+                                              riscv::CTRCTL_M |
+                                              riscv::CTRCTL_MTE;
+
   localparam EXC_OFF_RST = 8'h80;
 
   localparam SupervisorIrq = 1;

@@ -182,7 +182,9 @@ module csr_regfile
     // PMP addresses - ACC_DISPATCHER
     output logic [15:0][riscv::PLEN-3:0] pmpaddr_o,
     // TO_BE_COMPLETED - PERF_COUNTERS
-    output logic [31:0] mcountinhibit_o
+    output logic [31:0] mcountinhibit_o,
+    // Control Transfer Records unit configuration register - CTR_UNIT
+    output riscv::ctrctl_rv_t ctr_ctl_o
 );
   // internal signal to keep track of access exceptions
   logic read_access_exception, update_access_exception, privilege_violation;
@@ -294,6 +296,10 @@ module csr_regfile
   csrind_isel_t siselect_d, siselect_q;
   csrind_isel_t vsiselect_d, vsiselect_q;
 
+  // Control Transfer Records registers
+  riscv::ctrctl_rv_t mctrctl_d, mctrctl_q;
+  riscv::ctrctl_rv_t vsctrctl_d, vsctrctl_q;
+
   assign pmpcfg_o  = pmpcfg_q[15:0];
   assign pmpaddr_o = pmpaddr_q;
 
@@ -399,6 +405,9 @@ module csr_regfile
         else read_access_exception = 1'b1;
         riscv::CSR_VSIP:
         if (CVA6Cfg.RVH) csr_rdata = (mip_q & VS_DELEG_INTERRUPTS & hideleg_q) >> 1;
+        else read_access_exception = 1'b1;
+        riscv::CSR_VSCTRCTL:
+        if (CVA6Cfg.RVH) csr_rdata = vsctrctl_q & ~CTRCTL_MASK_SMODE;
         else read_access_exception = 1'b1;
         riscv::CSR_VSISELECT: begin
           if (CVA6Cfg.RVH) begin
@@ -579,6 +588,9 @@ module csr_regfile
         end
         riscv::CSR_STVAL:
         if (CVA6Cfg.RVS) csr_rdata = stval_q;
+        else read_access_exception = 1'b1;
+        riscv::CSR_SCTRCTL:
+        if (CVA6Cfg.RVS) csr_rdata = mctrctl_q & ~CTRCTL_MASK_SMODE;
         else read_access_exception = 1'b1;
         riscv::CSR_SISELECT: begin
           if (CVA6Cfg.RVH) begin
@@ -804,6 +816,7 @@ module csr_regfile
         riscv::CSR_MTVAL2:
         if (CVA6Cfg.RVH) csr_rdata = mtval2_q;
         else read_access_exception = 1'b1;
+        riscv::CSR_MCTRCTL: csr_rdata = mctrctl_q;
         riscv::CSR_MIP: csr_rdata = clic_mode_o ? '0 : mip_q;
         riscv::CSR_MINTSTATUS: begin
           if (CVA6Cfg.RVSCLIC) begin
@@ -1184,6 +1197,7 @@ module csr_regfile
     mtinst_d = mtinst_q;
     mtval2_d = mtval2_q;
     fiom_d = fiom_q;
+    mctrctl_d = mctrctl_q;
     miselect_d = miselect_q;
     dcache_d = dcache_q;
     icache_d = icache_q;
@@ -1200,6 +1214,7 @@ module csr_regfile
     vsepc_d = vsepc_q;
     vscause_d = vscause_q;
     vstval_d = vstval_q;
+    vsctrctl_d = vsctrctl_q;
     vsiselect_d = vsiselect_q;
     vsatp_d = vsatp_q;
 
@@ -1328,6 +1343,9 @@ module csr_regfile
             update_access_exception = 1'b1;
           end
         end
+        riscv::CSR_VSCTRCTL:
+        if (CVA6Cfg.RVH) vsctrctl_d = csr_wdata & ~CTRCTL_MASK_SMODE;
+        else update_access_exception = 1'b1;
         riscv::CSR_VSISELECT: begin
           if (CVA6Cfg.RVH) begin
             if (v_q) begin
@@ -1540,6 +1558,9 @@ module csr_regfile
         else update_access_exception = 1'b1;
         riscv::CSR_STVAL:
         if (CVA6Cfg.RVS && CVA6Cfg.TvalEn) stval_d = csr_wdata;
+        else update_access_exception = 1'b1;
+        riscv::CSR_SCTRCTL:
+        if (CVA6Cfg.RVS) mctrctl_d = csr_wdata & ~CTRCTL_MASK_SMODE;
         else update_access_exception = 1'b1;
         riscv::CSR_SISELECT:
           if (CVA6Cfg.RVH) begin
@@ -1911,6 +1932,7 @@ module csr_regfile
         riscv::CSR_MTVAL2:
         if (CVA6Cfg.RVH) mtval2_d = csr_wdata;
         else update_access_exception = 1'b1;
+        riscv::CSR_MCTRCTL: mctrctl_d = csr_wdata & ~CTRCTL_MASK_UNIMPLEMENTED;
         riscv::CSR_MIP: begin
           // In CLIC mode, writes to MIP are ignored.
           if (!clic_mode_o) begin
@@ -2844,6 +2866,12 @@ module csr_regfile
       end
       default: ;
     endcase
+
+    // Control Transfer Records
+    ctr_ctl_o = mctrctl_q;
+    if (CVA6Cfg.RVH && priv_lvl_q inside {riscv::PRIV_LVL_U, riscv::PRIV_LVL_S} && v_q) begin
+      ctr_ctl_o = vsctrctl_q;
+    end
   end
 
   // in debug mode we execute with privilege level M
@@ -2935,6 +2963,7 @@ module csr_regfile
       mscratch_q       <= {riscv::XLEN{1'b0}};
       mtval_q          <= {riscv::XLEN{1'b0}};
       fiom_q           <= '0;
+      mctrctl_q        <= riscv::ctrctl_rv_t'('b0);
       miselect_q       <= csrind_isel_t'('b0);
       dcache_q         <= {{riscv::XLEN - 1{1'b0}}, 1'b1};
       icache_q         <= {{riscv::XLEN - 1{1'b0}}, 1'b1};
@@ -2975,6 +3004,7 @@ module csr_regfile
         vstvec_q                 <= {riscv::XLEN{1'b0}};
         vsscratch_q              <= {riscv::XLEN{1'b0}};
         vstval_q                 <= {riscv::XLEN{1'b0}};
+        vsctrctl_q               <= riscv::ctrctl_rv_t'('b0);
         vsiselect_q              <= csrind_isel_t'('b0);
         vsatp_q                  <= {riscv::XLEN{1'b0}};
         en_ld_st_g_translation_q <= 1'b0;
@@ -3024,6 +3054,7 @@ module csr_regfile
       if (CVA6Cfg.TvalEn) mtval_q <= mtval_d;
       fiom_q          <= fiom_d;
       miselect_q      <= miselect_d;
+      mctrctl_q       <= mctrctl_d;
       dcache_q        <= dcache_d;
       icache_q        <= icache_d;
       mcountinhibit_q <= mcountinhibit_d;
@@ -3063,6 +3094,7 @@ module csr_regfile
         vstvec_q                 <= vstvec_d;
         vsscratch_q              <= vsscratch_d;
         vstval_q                 <= vstval_d;
+        vsctrctl_q               <= vsctrctl_d;
         vsiselect_q              <= vsiselect_d;
         vsatp_q                  <= vsatp_d;
         en_ld_st_g_translation_q <= en_ld_st_g_translation_d;

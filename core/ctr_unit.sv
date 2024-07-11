@@ -26,7 +26,9 @@ module ctr_unit
     // - COMMIT_STAGE
     input riscv::ctr_type_t [CVA6Cfg.NrCommitPorts-1:0] ctr_type_i,
     // - COMMIT_STAGE
-    input logic [CVA6Cfg.NrCommitPorts-1:0] ctr_valid_i
+    input logic [CVA6Cfg.NrCommitPorts-1:0] ctr_valid_i,
+    // - CSR_REGFILE
+    input riscv::ctrctl_rv_t ctr_ctl_i
 );
 
   riscv::ctrsource_rv_t [CVA6Cfg.NrCommitPorts-1:0] emitter_source;
@@ -41,6 +43,7 @@ module ctr_unit
       .source_i (ctr_source_i),
       .type_i   (ctr_type_i),
       .valid_i  (ctr_valid_i),
+      .ctl_i    (ctr_ctl_i),
       .source_o (emitter_source),
       .target_o (emitter_target),
       .data_o   (emitter_data)

@@ -468,6 +468,7 @@ package riscv;
     CSR_VSCAUSE          = 12'h242,
     CSR_VSTVAL           = 12'h243,
     CSR_VSIP             = 12'h244,
+    CSR_VSCTRCTL         = 12'h24E,  // Virtual supervisor control transfer records control register
     CSR_VSISELECT        = 12'h250,  // Virtual supervisor indirect register select
     CSR_VSIREG           = 12'h251,  // Virtual supervisor indirect register alias
     CSR_VSIREG2          = 12'h252,  // Virtual supervisor indirect register alias 2
@@ -489,6 +490,7 @@ package riscv;
     CSR_STVAL            = 12'h143,
     CSR_SIP              = 12'h144,
     CSR_SINTTHRESH       = 12'h147,
+    CSR_SCTRCTL          = 12'h14E,  // Supervisor control transfer records control register
     CSR_SISELECT         = 12'h150,  // Supervisor indirect register select
     CSR_SIREG            = 12'h151,  // Supervisor indirect register alias
     CSR_SIREG2           = 12'h152,  // Supervisor indirect register alias 2
@@ -564,6 +566,7 @@ package riscv;
     CSR_MINTTHRESH       = 12'h347,
     CSR_MTINST           = 12'h34A,
     CSR_MTVAL2           = 12'h34B,
+    CSR_MCTRCTL          = 12'h34E,  // Machine control transfer records control register
     CSR_MENVCFG          = 12'h30A,
     CSR_MENVCFGH         = 12'h31A,
     CSR_MISELECT         = 12'h350,  // Machine indirect register select
@@ -889,6 +892,64 @@ package riscv;
   // ------------------------
   // Control Transfer Records
   // ------------------------
+  typedef struct packed {
+    logic [63:60] custom;
+    logic [59:48] wpri4;
+    logic         dirljmpinh;
+    logic         indljmpinh;
+    logic         retinh;
+    logic         corswapinh;
+    logic         dirjmpinh;
+    logic         indjmpinh;
+    logic         dircallinh;
+    logic         indcallinh;
+    logic [39:38] wpri3;
+    logic         tkbrinh;
+    logic         ntbren;
+    logic         tretinh;
+    logic         intrinh;
+    logic         excinh;
+    logic [32:13] wpri2;
+    logic         lcofifrz;
+    logic         bpfrz;
+    logic         wpri1;
+    logic         mte;
+    logic         ste;
+    logic         rasemu;
+    logic [6:3]   wpri0;
+    logic         m;
+    logic         s;
+    logic         u;
+  } ctrctl_rv_t;
+
+  localparam logic [63:0] CTRCTL_U          = 64'h0000000000000001;
+  localparam logic [63:0] CTRCTL_S          = 64'h0000000000000002;
+  localparam logic [63:0] CTRCTL_M          = 64'h0000000000000004;
+  localparam logic [63:0] CTRCTL_WPRI0      = 64'h0000000000000078;
+  localparam logic [63:0] CTRCTL_RASEMU     = 64'h0000000000000080;
+  localparam logic [63:0] CTRCTL_STE        = 64'h0000000000000100;
+  localparam logic [63:0] CTRCTL_MTE        = 64'h0000000000000200;
+  localparam logic [63:0] CTRCTL_WPRI1      = 64'h0000000000000400;
+  localparam logic [63:0] CTRCTL_BPFRZ      = 64'h0000000000000800;
+  localparam logic [63:0] CTRCTL_LCOFIFRZ   = 64'h0000000000001000;
+  localparam logic [63:0] CTRCTL_WPRI2      = 64'h00000001FFFFE000;
+  localparam logic [63:0] CTRCTL_EXCINH     = 64'h0000000200000000;
+  localparam logic [63:0] CTRCTL_INTRINH    = 64'h0000000400000000;
+  localparam logic [63:0] CTRCTL_TRETINH    = 64'h0000000800000000;
+  localparam logic [63:0] CTRCTL_NTBREN     = 64'h0000001000000000;
+  localparam logic [63:0] CTRCTL_TKBRINH    = 64'h0000002000000000;
+  localparam logic [63:0] CTRCTL_WPRI3      = 64'h000000C000000000;
+  localparam logic [63:0] CTRCTL_INDCALLINH = 64'h0000010000000000;
+  localparam logic [63:0] CTRCTL_DIRCALLINH = 64'h0000020000000000;
+  localparam logic [63:0] CTRCTL_INDJMPINH  = 64'h0000040000000000;
+  localparam logic [63:0] CTRCTL_DIRJMPINH  = 64'h0000080000000000;
+  localparam logic [63:0] CTRCTL_CORSWAPINH = 64'h0000100000000000;
+  localparam logic [63:0] CTRCTL_RETINH     = 64'h0000200000000000;
+  localparam logic [63:0] CTRCTL_INDLJMPINH = 64'h0000400000000000;
+  localparam logic [63:0] CTRCTL_DIRLJMPINH = 64'h0000800000000000;
+  localparam logic [63:0] CTRCTL_WPRI4      = 64'h0FFF000000000000;
+  localparam logic [63:0] CTRCTL_CUSTOM     = 64'hF000000000000000;
+
   typedef struct packed {
     logic [XLEN-1:1] pc;
     logic            v;

@@ -442,6 +442,7 @@ module cva6
   riscv::xlen_t [CVA6Cfg.NrCommitPorts-1:0] ctr_source_commit_ctr;
   riscv::ctr_type_t [CVA6Cfg.NrCommitPorts-1:0] ctr_type_commit_ctr;
   logic [CVA6Cfg.NrCommitPorts-1:0] ctr_valid_commit_ctr;
+  riscv::ctrctl_rv_t ctr_ctl_csr_ctr;
   // ----------------------------
   // Performance Counters <-> *
   // ----------------------------
@@ -999,6 +1000,7 @@ module cva6
       .pmpcfg_o                (pmpcfg),
       .pmpaddr_o               (pmpaddr),
       .mcountinhibit_o         (mcountinhibit_csr_perf),
+      .ctr_ctl_o               (ctr_ctl_csr_ctr),
       .debug_req_i,
       .ipi_i,
       .irq_i,
@@ -1400,7 +1402,9 @@ module cva6
       // from commit stage
       .ctr_source_i (ctr_source_commit_ctr),
       .ctr_type_i   (ctr_type_commit_ctr),
-      .ctr_valid_i  (ctr_valid_commit_ctr)
+      .ctr_valid_i  (ctr_valid_commit_ctr),
+      // from CSR register file
+      .ctr_ctl_i    (ctr_ctl_csr_ctr)
   );
 
   // -------------------

@@ -30,6 +30,8 @@ module ctr_emitter
     input riscv::ctr_type_t [CVA6Cfg.NrCommitPorts-1:0] type_i,
     // The module inputs are valid - CTR_UNIT
     input logic [CVA6Cfg.NrCommitPorts-1:0] valid_i,
+    // Control Tranfer Records control signals - CTR_UNIT
+    input riscv::ctrctl_rv_t ctl_i,
     // Control Transfer Records source register - CTR_UNIT
     output riscv::ctrsource_rv_t [CVA6Cfg.NrCommitPorts-1:0] source_o,
     // Control Transfer Records target register - CTR_UNIT
